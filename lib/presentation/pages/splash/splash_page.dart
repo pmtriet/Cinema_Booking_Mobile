@@ -7,6 +7,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class SplashPage extends StatelessWidget {
+  static Route route() {
+    return MaterialPageRoute<void>(
+      builder: (_) => SplashPage(),
+    );
+  }
   const SplashPage({super.key});
 
   @override

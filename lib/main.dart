@@ -24,36 +24,19 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => AppAuthCubit(),
-      child:
-        BlocConsumer<AppAuthCubit, AppAuthState>(
-          listener: (context, state) {
-            switch (state) {
-              case LogOut():
-                router.go(RouteName.welcome);
-            }
-          }, 
-          builder: (context, state) {
-             switch (state) {
-              case LogIn():
-                return MaterialApp.router(
-                  title: 'Flutter Demo',
-                  theme: ThemeData(
-                    colorScheme: ColorScheme.fromSeed(seedColor: const Color(appColor)),
-                    useMaterial3: true,
-                  ),
-                  routerConfig: router,
-                );
-              default: //state is LogOut
-                return MaterialApp(
-                  onGenerateRoute: (_) => RouteName.splash.route(),
-                );
-                router.go(RouteName.welcome);
-              
-            }
-            
-          },
-          
-        ),
-      );
+      child: BlocBuilder<AppAuthCubit, AppAuthState>(
+        builder: (context, state) {
+          return MaterialApp.router(
+            title: 'Flutter Demo',
+            theme: ThemeData(
+              colorScheme:
+                  ColorScheme.fromSeed(seedColor: const Color(appColor)),
+              useMaterial3: true,
+            ),
+            routerConfig: router,
+          );
+        },
+      ),
+    );
   }
 }
