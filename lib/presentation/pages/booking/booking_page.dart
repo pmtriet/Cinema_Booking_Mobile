@@ -236,7 +236,7 @@ class BookingViewState extends State<BookingView> {
                   child: BlocBuilder<ChosenSeatsCubit, List<SeatResponse>>(
                       builder: (context, chosenSeats) {
                     return AppButton(
-                      title: "Booking",
+                      title: chosenSeats.isEmpty ? "Booking" : "Buy ${chosenSeats.length} tickets - Total: ${chosenSeats.fold(0, (previousValue, element) => previousValue + element.seatPrice)}",
                       onTextButtonPressed: () {
                         sortChosenSeatsByName(chosenSeats);
                         chosenSeats.isNotEmpty
