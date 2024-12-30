@@ -1,3 +1,4 @@
+import 'package:cinemabooking/datalayer/data_response/booking/seat_id_response.dart';
 import 'package:cinemabooking/datalayer/data_response/booking/seat_response.dart';
 import 'package:cinemabooking/presentation/pages/auth/login_page.dart';
 import 'package:cinemabooking/presentation/pages/auth/register_page.dart';
@@ -102,26 +103,49 @@ final router = GoRouter(
       },
     ),
     GoRoute(
-        path: '${RouteName.ticket}/:dataQr',
+        path: RouteName.ticket,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
           final scheduleId = extra['scheduleId'] as int;
-          final chosenSeats = extra['chosenSeats'] as List<SeatResponse>;
-          final dataQr = state.pathParameters['dataQr']!;
-          final roomName = extra['roomName']!;
-          final movieName = extra['movieName']!;
-          final dateTime = extra['dateTime']!;
-          final cost = extra['cost']!;
-          final nameChosenSeats = extra['nameChosenSeats'] as List<String>;
+          final chosenSeats = extra['chosenSeats'] as List<int>;
+          // final dataQr = state.pathParameters['dataQr']!;
+          // final roomName = extra['roomName']!;
+          // final movieName = extra['movieName']!;
+          // final dateTime = extra['dateTime']!;
+          // final cost = extra['cost']!;
+          // final nameChosenSeats = extra['nameChosenSeats'] as List<String>;
           return TicketPage(
-              dataQr: dataQr,
+              // dataQr: dataQr,
               scheduleId: scheduleId,
               chosenSeats: chosenSeats,
-              roomName: roomName,
-              movieName: movieName,
-              dateTime: dateTime,
-              cost: cost,
-              nameChosenSeats: nameChosenSeats);
+              // roomName: roomName,
+              // movieName: movieName,
+              // dateTime: dateTime,
+              // cost: cost,
+              // nameChosenSeats: nameChosenSeats
+              );
         }),
+    // GoRoute(
+    //     path: '${RouteName.ticket}/:dataQr',
+    //     builder: (context, state) {
+    //       final extra = state.extra as Map<String, dynamic>;
+    //       final scheduleId = extra['scheduleId'] as int;
+    //       final chosenSeats = extra['chosenSeats'] as List<SeatResponse>;
+    //       final dataQr = state.pathParameters['dataQr']!;
+    //       final roomName = extra['roomName']!;
+    //       final movieName = extra['movieName']!;
+    //       final dateTime = extra['dateTime']!;
+    //       final cost = extra['cost']!;
+    //       final nameChosenSeats = extra['nameChosenSeats'] as List<String>;
+    //       return TicketPage(
+    //           dataQr: dataQr,
+    //           scheduleId: scheduleId,
+    //           chosenSeats: chosenSeats,
+    //           roomName: roomName,
+    //           movieName: movieName,
+    //           dateTime: dateTime,
+    //           cost: cost,
+    //           nameChosenSeats: nameChosenSeats);
+    //     }),
   ],
 );

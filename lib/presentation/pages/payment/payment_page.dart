@@ -114,6 +114,8 @@ class PaymentView extends StatelessWidget {
       String scheduleDateTime, int cost, String stringListSeat) {
     List<String> listValue =
         context.read<PaymentCubit>().groupSeatNames(chosenSeats);
+    List<int> seatIds = chosenSeats.map((seat) => seat.seatId).toList();
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -144,20 +146,24 @@ class PaymentView extends StatelessWidget {
             AppButton(
               title: "Continue",
               onTextButtonPressed: () {
-                String dataQr =
-                    'Movie:$movieName-Room:$roomName-Datetime:$scheduleDateTime-Seats:$stringListSeat';
-                context.push(
-                  '${RouteName.ticket}/${Uri.encodeComponent(dataQr)}',
-                  extra: {
-                    'chosenSeats': chosenSeats,
-                    'scheduleId': scheduleId,
-                    'roomName':roomName,
-                    'movieName':movieName,
-                    'dateTime':scheduleDateTime,
-                    'cost':cost.toString(),
-                    'nameChosenSeats':listValue,
-                  },
-                );
+                // String dataQr =
+                //     'Movie:$movieName-Room:$roomName-Datetime:$scheduleDateTime-Seats:$stringListSeat';
+                // context.push(
+                //   '${RouteName.ticket}/${Uri.encodeComponent(dataQr)}',
+                //   extra: {
+                //     'chosenSeats': chosenSeats,
+                //     'scheduleId': scheduleId,
+                //     'roomName':roomName,
+                //     'movieName':movieName,
+                //     'dateTime':scheduleDateTime,
+                //     'cost':cost.toString(),
+                //     'nameChosenSeats':listValue,
+                //   },
+                // );
+                context.push(RouteName.ticket, extra: {
+                   'chosenSeats': seatIds,
+                   'scheduleId': scheduleId,
+                });
               },
             ),
           ],
