@@ -160,9 +160,19 @@ class PaymentView extends StatelessWidget {
                 //     'nameChosenSeats':listValue,
                 //   },
                 // );
+                String dataQr =
+                'Movie:$movieName-Room:$roomName-Datetime:$scheduleDateTime-Seats:$stringListSeat';
                 context.push(RouteName.ticket, extra: {
+                  'dataQr': dataQr,
                    'chosenSeats': seatIds,
+                   'listChosenSeats': chosenSeats,
                    'scheduleId': scheduleId,
+                   'roomName':roomName,
+                    'movieName':movieName,
+                    'dateTime':scheduleDateTime,
+                    'cost':cost.toString(),
+                    'nameChosenSeats':listValue,
+
                 });
               },
             ),

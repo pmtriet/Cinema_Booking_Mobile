@@ -108,21 +108,23 @@ final router = GoRouter(
           final extra = state.extra as Map<String, dynamic>;
           final scheduleId = extra['scheduleId'] as int;
           final chosenSeats = extra['chosenSeats'] as List<int>;
-          // final dataQr = state.pathParameters['dataQr']!;
-          // final roomName = extra['roomName']!;
-          // final movieName = extra['movieName']!;
-          // final dateTime = extra['dateTime']!;
-          // final cost = extra['cost']!;
-          // final nameChosenSeats = extra['nameChosenSeats'] as List<String>;
+          final listChosenSeats = extra['listChosenSeats'] as List<SeatResponse>;
+          final dataQr = extra['dataQr']!;
+          final roomName = extra['roomName']!;
+          final movieName = extra['movieName']!;
+          final dateTime = extra['dateTime']!;
+          final cost = extra['cost']!;
+          final nameChosenSeats = extra['nameChosenSeats'] as List<String>;
           return TicketPage(
-              // dataQr: dataQr,
+              dataQr: dataQr,
               scheduleId: scheduleId,
               chosenSeats: chosenSeats,
-              // roomName: roomName,
-              // movieName: movieName,
-              // dateTime: dateTime,
-              // cost: cost,
-              // nameChosenSeats: nameChosenSeats
+              listChosenSeats: listChosenSeats,
+              roomName: roomName,
+              movieName: movieName,
+              dateTime: dateTime,
+              cost: cost,
+              nameChosenSeats: nameChosenSeats
               );
         }),
     // GoRoute(

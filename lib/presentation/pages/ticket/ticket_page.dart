@@ -307,32 +307,67 @@
 // }
 
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:cinemabooking/config/sever_url.dart';
+import 'package:cinemabooking/datalayer/data_response/booking/seat_response.dart';
 import 'package:cinemabooking/datalayer/services/dio_client.dart';
+import 'package:cinemabooking/presentation/pages/ticket/qr_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:screenshot/screenshot.dart'; // Thêm thư viện Screenshot
+import 'package:image_gallery_saver/image_gallery_saver.dart'; // Thêm thư viện Image Gallery Saver
+import 'package:permission_handler/permission_handler.dart'; // Thêm thư viện Permission Handler
 
 // Lớp để đóng gói các tham số truyền vào (nếu sử dụng)
 class TicketArguments {
   final int scheduleId;
   final List<int> chosenSeats;
+  final String dataQr;
+  final List<SeatResponse> listChosenSeats;
+  final List<String> nameChosenSeats;
+  final String roomName;
+  final String movieName;
+  final String dateTime;
+  final String cost;
 
   TicketArguments({
     required this.scheduleId,
     required this.chosenSeats,
+    required this.dataQr,
+    required this.listChosenSeats,
+    required this.nameChosenSeats,
+    required this.roomName,
+    required this.movieName,
+    required this.dateTime,
+    required this.cost,
   });
 }
 
 class TicketPage extends StatefulWidget {
   final int scheduleId; // ID lịch chiếu
   final List<int> chosenSeats; // Danh sách seatId đã chọn
+  final String dataQr;
+  final List<SeatResponse> listChosenSeats;
+  final List<String> nameChosenSeats;
+
+  final String roomName;
+  final String movieName;
+  final String dateTime;
+  final String cost;
 
   const TicketPage({
     super.key,
     required this.scheduleId,
     required this.chosenSeats,
+    required this.dataQr,
+    required this.listChosenSeats,
+    required this.nameChosenSeats,
+    required this.cost,
+    required this.movieName,
+    required this.dateTime,
+    required this.roomName,
   });
 
   @override
@@ -342,9 +377,13 @@ class TicketPage extends StatefulWidget {
 class _TicketPageState extends State<TicketPage> {
   String? paymentUrl;
   bool isLoading = true;
+  bool paymentSuccess = false; // Biến trạng thái thanh toán
   final Dio _dio = DioClient.getInstance(); // Khởi tạo Dio
 
   late final WebViewController _controller;
+
+  // Thêm ScreenshotController
+  final ScreenshotController _screenshotController = ScreenshotController();
 
   @override
   void initState() {
@@ -359,14 +398,17 @@ class _TicketPageState extends State<TicketPage> {
             setState(() {
               isLoading = true;
             });
+            print('WebView started loading: $url');
           },
           onPageFinished: (String url) {
             // Ẩn loading khi tải xong trang
             setState(() {
               isLoading = false;
             });
+            print('WebView finished loading: $url');
           },
           onNavigationRequest: (NavigationRequest request) {
+            print('Navigation request to: ${request.url}');
             if (request.url.startsWith('$serverFEUrl/payment-info')) {
               // Xử lý kết quả thanh toán
               _handlePaymentResult(request.url);
@@ -414,6 +456,7 @@ class _TicketPageState extends State<TicketPage> {
 
           // Load URL vào WebView
           if (paymentUrl != null) {
+            print('Loading payment URL into WebView: $paymentUrl');
             _controller.loadRequest(Uri.parse(paymentUrl!));
           }
         } else {
@@ -425,6 +468,7 @@ class _TicketPageState extends State<TicketPage> {
             const SnackBar(
                 content: Text('Không nhận được URL thanh toán từ server')),
           );
+          print('Error: No data field in booking response');
         }
       } else {
         // Xử lý lỗi khi gọi API booking
@@ -434,6 +478,8 @@ class _TicketPageState extends State<TicketPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đặt vé thất bại')),
         );
+        print(
+            'Error: Booking failed with status ${bookingResponse.statusCode}');
       }
     } catch (e) {
       // Xử lý ngoại lệ
@@ -454,30 +500,157 @@ class _TicketPageState extends State<TicketPage> {
 
     print('vnp_ResponseCode: $responseCode');
 
-    String message;
     if (responseCode == '00') {
-      message = 'Thanh toán thành công!';
-      // Cập nhật trạng thái đơn hàng trên hệ thống của bạn tại đây
+      // Thanh toán thành công
+      setState(() {
+        paymentSuccess = true;
+      });
+      print('Payment success: paymentSuccess set to true');
     } else {
-      message = 'Thanh toán thất bại. Mã lỗi: $responseCode';
-      // Xử lý thất bại thanh toán tại đây
+      // Thanh toán thất bại
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Thanh toán thất bại. Mã lỗi: $responseCode')),
+      );
+      print('Payment failed: $responseCode');
     }
+  }
 
-    // Hiển thị thông báo cho người dùng
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Kết Quả Thanh Toán'),
-        content: Text(message),
-        actions: [
+  Future<void> _saveTicketToGallery() async {
+    try {
+      // Yêu cầu quyền truy cập lưu trữ
+      var status = await Permission.storage.request();
+      if (!status.isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Quyền lưu trữ bị từ chối')),
+        );
+        return;
+      }
+
+      // Chụp ảnh widget
+      final Uint8List? imageBytes = await _screenshotController.capture();
+      if (imageBytes == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chụp ảnh thất bại')),
+        );
+        return;
+      }
+
+      // Lưu ảnh vào thư viện ảnh
+      final result = await ImageGallerySaver.saveImage(
+        imageBytes,
+        quality: 100,
+        name: 'ticket_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      if (result['isSuccess'] ?? false) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lưu vé thành công vào thư viện ảnh')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lưu vé thất bại')),
+        );
+      }
+    } catch (e) {
+      print('Error saving ticket: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi lưu vé: ${e.toString()}')),
+      );
+    }
+  }
+
+  Widget buildTicketDetails() {
+    print('Building ticket details...');
+    print('Movie Name: ${widget.movieName}');
+    print('Room Name: ${widget.roomName}');
+    print('Date Time: ${widget.dateTime}');
+    print('Cost: ${widget.cost}');
+    print('Chosen Seats: ${widget.nameChosenSeats}');
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Wrap nội dung vé trong Screenshot để chụp ảnh
+          Screenshot(
+            controller: _screenshotController,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // QR Code
+                Center(
+                  child: QRGenerator(data: widget.dataQr),
+                ),
+                const SizedBox(height: 20),
+                // Movie Name
+                Text(
+                  widget.movieName,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Room Name
+                Text(
+                  'Room: ${widget.roomName}',
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(height: 10),
+                // Date and Time
+                Text(
+                  'Date/time: ${widget.dateTime}',
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(height: 10),
+                // Cost
+                Text(
+                  'Cost: ${widget.cost}',
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(height: 10),
+                // Seats
+                const Text(
+                  'Seats:',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Wrap(
+                  spacing: 8.0,
+                  children: widget.nameChosenSeats
+                      .map((seatName) => Chip(label: Text(seatName)))
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Nút lưu ảnh
+          ElevatedButton.icon(
+            onPressed: _saveTicketToGallery,
+            icon: const Icon(Icons.save_alt),
+            label: const Text('Save Ticket'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              textStyle: const TextStyle(fontSize: 16),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Button to Go Home or Another Action
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Đóng hộp thoại
-              context.go('/'); // Quay lại trang trước bằng go_router
-              // Hoặc chuyển hướng đến trang thành công
-              // context.go('/success');
+              context.go('/'); // Điều hướng về trang chủ hoặc một trang cụ thể
             },
-            child: const Text('OK'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 5),
+              textStyle: const TextStyle(fontSize: 14),
+            ),
+            child: const Text('Return home'),
           ),
         ],
       ),
@@ -486,16 +659,24 @@ class _TicketPageState extends State<TicketPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('Building TicketPage: paymentSuccess = $paymentSuccess');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Thanh Toán'),
       ),
       body: Stack(
         children: [
-          if (paymentUrl != null)
-            WebViewWidget(controller: _controller)
+          // Nếu chưa thanh toán thành công, hiển thị WebView
+          if (!paymentSuccess)
+            if (paymentUrl != null)
+              WebViewWidget(controller: _controller)
+            else
+              const Center(child: Text('Không thể tạo URL thanh toán'))
+          // Nếu thanh toán thành công, hiển thị chi tiết vé
           else
-            const Center(child: Text('Không thể tạo URL thanh toán')),
+            buildTicketDetails(),
+          // Hiển thị loading indicator khi đang tải
           if (isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),

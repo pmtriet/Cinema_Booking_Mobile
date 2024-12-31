@@ -1,2 +1,2 @@
-const String serverUrl = 'http://172.20.10.5:3001';
-const String serverFEUrl = 'http://172.20.10.5:3000';
+const String serverUrl = 'http://192.168.1.216:3001';
+const String serverFEUrl = 'http://192.168.1.216:3000';
